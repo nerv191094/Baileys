@@ -118,24 +118,27 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		config.msgRetryCounterCache ||
 		new NodeCache<number>({
 			stdTTL: DEFAULT_CACHE_TTLS.MSG_RETRY, // 1 hour
-			useClones: false
+			useClones: false,
+			maxKeys: 5000
 		})
 	const callOfferCache =
 		config.callOfferCache ||
 		new NodeCache<WACallEvent>({
 			stdTTL: DEFAULT_CACHE_TTLS.CALL_OFFER, // 5 mins
-			useClones: false
+			useClones: false,
+			maxKeys: 1000
 		})
 
 	const placeholderResendCache =
 		config.placeholderResendCache ||
 		new NodeCache({
 			stdTTL: DEFAULT_CACHE_TTLS.MSG_RETRY, // 1 hour
-			useClones: false
+			useClones: false,
+			maxKeys: 5000
 		})
 
 	// Debounce identity-change session refreshes per JID to avoid bursts
-	const identityAssertDebounce = new NodeCache<boolean>({ stdTTL: 5, useClones: false })
+	const identityAssertDebounce = new NodeCache<boolean>({ stdTTL: 5, useClones: false, maxKeys: 500 })
 
 	let sendActiveReceipts = false
 
@@ -176,7 +179,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		} else {
 			// Store original message data so PDO response handler can preserve
 			// metadata (LID details, timestamps, etc.) that the phone may omit
-			await placeholderResendCache.set(messageKey?.id!, msgData || true)
+			try {
+				await placeholderResendCache.set(messageKey?.id!, msgData || true)
+			} catch {
+				/* maxKeys exceeded */
+			}
 		}
 
 		await delay(2000)
@@ -403,7 +410,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 			// Use the new retry count for the rest of the logic
 			const key = `${msgId}:${msgKey?.participant}`
-			await msgRetryCache.set(key, retryCount)
+			try {
+				await msgRetryCache.set(key, retryCount)
+			} catch {
+				/* maxKeys exceeded */
+			}
 		} else {
 			// Fallback to old system
 			const key = `${msgId}:${msgKey?.participant}`
@@ -415,7 +426,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			}
 
 			retryCount += 1
-			await msgRetryCache.set(key, retryCount)
+			try {
+				await msgRetryCache.set(key, retryCount)
+			} catch {
+				/* maxKeys exceeded */
+			}
 		}
 
 		const key = `${msgId}:${msgKey?.participant}`
@@ -1019,7 +1034,11 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 	const updateSendMessageAgainCount = async (id: string, participant: string) => {
 		const key = `${id}:${participant}`
 		const newValue = ((await msgRetryCache.get<number>(key)) || 0) + 1
-		await msgRetryCache.set(key, newValue)
+		try {
+			await msgRetryCache.set(key, newValue)
+		} catch {
+			/* maxKeys exceeded */
+		}
 	}
 
 	const sendMessagesAgain = async (key: WAMessageKey, ids: string[], retryNode: BinaryNode) => {
