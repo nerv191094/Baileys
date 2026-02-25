@@ -5,15 +5,6 @@ import { AbstractSocketClient } from './types'
 export class WebSocketClient extends AbstractSocketClient {
 	protected socket: WebSocket | null = null
 
-	/**
-	 * CONNECTION STABILITY: Store references to the event forwarding
-	 * functions so they can be removed from the native WebSocket when
-	 * the connection closes. Without this, the native socket holds
-	 * references to `this.emit` which prevents GC of the client and
-	 * all objects it references.
-	 */
-	private socketListeners: Map<string, (...args: any[]) => void> = new Map()
-
 	get isOpen(): boolean {
 		return this.socket?.readyState === WebSocket.OPEN
 	}
@@ -56,28 +47,19 @@ export class WebSocketClient extends AbstractSocketClient {
 			return
 		}
 
-		/**
-		 * CONNECTION STABILITY: Remove all forwarding listeners from the
-		 * native WebSocket before closing. This ensures no event fires
-		 * after close and breaks the reference chain from the native
-		 * socket back to this client instance.
-		 */
-		for (const [event, handler] of this.socketListeners) {
-			this.socket.removeListener(event, handler)
-		}
-		this.socketListeners.clear()
+		const socket = this.socket
+		this.socket = null
 
 		const closePromise = new Promise<void>(resolve => {
-			this.socket?.once('close', resolve)
+			socket.once('close', resolve)
 		})
 
-		this.socket.close()
+		socket.close()
 
 		await closePromise
 
 		// Remove all listeners from the underlying WebSocket to break closure references
-		this.socket.removeAllListeners()
-		this.socket = null
+		socket.removeAllListeners()
 	}
 	send(str: string | Uint8Array, cb?: (err?: Error) => void): boolean {
 		this.socket?.send(str, cb)
