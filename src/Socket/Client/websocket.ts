@@ -37,7 +37,6 @@ export class WebSocketClient extends AbstractSocketClient {
 
 		for (const event of events) {
 			const handler = (...args: any[]) => this.emit(event, ...args)
-			this.socketListeners.set(event, handler)
 			this.socket?.on(event, handler)
 		}
 	}
