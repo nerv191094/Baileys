@@ -223,7 +223,6 @@ export const makeEventBuffer = (logger: ILogger): BaileysBufferableEventEmitter 
 								flush()
 							}
 						}, 100)
-						activeBufferedTimeouts.add(t)
 					}
 
 					return result
