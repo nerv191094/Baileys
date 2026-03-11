@@ -641,34 +641,8 @@ export const makeSocket = (config: SocketConfig) => {
 		clearTimeout(keepAliveReq)
 		clearTimeout(qrTimer)
 
-		// CONNECTION STABILITY: Reset keepalive state so a stale counter
-		// doesn't carry over if the socket object is somehow reused.
-		consecutivePingFailures = 0
-
-		/**
-		 * CONNECTION STABILITY: Remove ALL listeners from the WebSocket,
-		 * not just 'close', 'open', 'message'. The CB: prefixed listeners
-		 * (CB:message, CB:call, CB:receipt, CB:notification, etc.) registered
-		 * by messages-recv.ts hold closures over the entire socket scope.
-		 * Leaving them attached prevents garbage collection of the old
-		 * connection's state and can cause handlers to fire on stale data
-		 * if close/reconnect races occur.
-		 */
 		ws.removeAllListeners()
 
-		// CONNECTION STABILITY: Flush any pending buffered events before
-		// emitting the close, so consumers see all events that arrived
-		// before the disconnect. Then destroy the buffer to release memory.
-		if (ev.isBuffering()) {
-			ev.flush()
-		}
-
-		/**
-		 * CONNECTION STABILITY: Add a timeout on ws.close() to prevent
-		 * hanging indefinitely if the underlying TCP socket is stuck.
-		 * A 5-second timeout is generous enough for a clean close but
-		 * prevents zombie connections from blocking shutdown.
-		 */
 		if (!ws.isClosed && !ws.isClosing) {
 			try {
 				await Promise.race([
@@ -688,20 +662,12 @@ export const makeSocket = (config: SocketConfig) => {
 			}
 		})
 
-		/**
-		 * CONNECTION STABILITY: Release noise handler internal state
-		 * (encryption buffers, transport state, pending frame callbacks).
-		 * Without this, the noise handler's inBytes buffer and transport
-		 * encryption keys remain in memory after disconnect.
-		 */
-		noise.destroy()
-
-		/**
-		 * CONNECTION STABILITY: Remove all event listeners to allow GC.
-		 * This clears connection.update listeners AND any process/handler
-		 * listeners registered via ev.on() throughout the socket layers.
-		 */
 		ev.removeAllListeners()
+
+		ev.release()
+
+		// Release signal repository caches (LID mapping, migrated sessions)
+		signalRepository.destroy()
 	}
 
 	const waitForSocketOpen = async () => {
