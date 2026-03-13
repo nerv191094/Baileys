@@ -744,7 +744,7 @@ export const makeSocket = (config: SocketConfig) => {
 					} catch (err) {
 						consecutivePingFailures++
 						logger.error(
-							{ trace: (err as Error).stack, consecutivePingFailures, maxFailures: MAX_PING_FAILURES },
+							{err, trace: (err as Error).stack, consecutivePingFailures, maxFailures: MAX_PING_FAILURES },
 							'error in sending keep alive'
 						)
 
