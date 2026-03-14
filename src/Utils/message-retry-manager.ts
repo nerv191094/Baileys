@@ -304,6 +304,11 @@ export class MessageRetryManager {
 		}
 
 		this.pendingPhoneRequests = {}
+		
+		// 先清理 NativeLRUCache 的定时器，避免内存泄漏
+        this.recentMessagesMap.destroy();
+        this.sessionRecreateHistory.destroy();
+        this.retryCounters.destroy();
 
 		// Clear all LRU caches and maps
 		this.recentMessagesMap.clear()
