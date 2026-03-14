@@ -281,7 +281,7 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 			if (useCache) {
 				const devices =
 					mgetDevices?.[user!] ||
-					(userDevicesCache.mget ? undefined : ((await userDevicesCache.get(user!)) as FullJid[]))
+					(await userDevicesCache.get(user!)) as FullJid[]
 				if (devices) {
 					const devicesWithJid = devices.map(d => ({
 						...d,
