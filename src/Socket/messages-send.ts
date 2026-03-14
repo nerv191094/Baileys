@@ -1164,11 +1164,29 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 	// Clean up local resources when connection closes
 	ev.on('connection.update', ({ connection }) => {
 		if (connection === 'close') {
-			messageRetryManager?.destroy()
-            userDevicesCache.close();
-            peerSessionsCache.close();
+			try {
+                messageRetryManager?.destroy();
+            } catch (err) {
+                logger.error({ err }, 'Failed to destroy messageRetryManager');
+            }
+            
+            // ✅ 类型安全的清理：优先使用 close()，回退到 flushAll()
+            const safeClose = (cache, name) => {
+                try {
+                    if (cache && typeof cache.close === 'function') {
+                        cache.close();
+                    } else if (cache && typeof cache.flushAll === 'function') {
+                        cache.flushAll();
+                    }
+                } catch (err) {
+                    logger.error({ err, cacheName: name }, 'Failed to close cache');
+                }
+            };
+            
+            safeClose(userDevicesCache, 'userDevicesCache');
+            safeClose(peerSessionsCache, 'peerSessionsCache');
 		}
-	})
+	});
 
 	return {
 		...sock,

@@ -1683,10 +1683,22 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 		// Clean up local caches when connection closes
 		if (connection === 'close') {
-			msgRetryCache.close();
-            callOfferCache.close();
-            placeholderResendCache.close();
-            identityAssertDebounce.close();
+            const safeClose = (cache, name) => {
+                try {
+                    if (cache && typeof cache.close === 'function') {
+                        cache.close();
+                    } else if (cache && typeof cache.flushAll === 'function') {
+                        cache.flushAll();
+                    }
+                } catch (err) {
+                    logger.error({ err, cacheName: name }, 'Failed to close cache');
+                }
+            };
+            
+            safeClose(msgRetryCache, 'msgRetryCache');
+            safeClose(callOfferCache, 'callOfferCache');
+            safeClose(placeholderResendCache, 'placeholderResendCache');
+            safeClose(identityAssertDebounce, 'identityAssertDebounce');
 		}
 	})
 
