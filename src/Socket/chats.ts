@@ -131,11 +131,11 @@ export const makeChatsSocket = (config: SocketConfig) => {
 
 	const placeholderResendCache =
 		config.placeholderResendCache ||
-		(new NodeCache<number>({
+		new NodeCache<number>({
 			stdTTL: DEFAULT_CACHE_TTLS.MSG_RETRY, // 1 hour
 			useClones: false,
 			maxKeys: 5000
-		}) as CacheStore)
+		})
 
 	if (!config.placeholderResendCache) {
 		config.placeholderResendCache = placeholderResendCache
@@ -1467,13 +1467,10 @@ export const makeChatsSocket = (config: SocketConfig) => {
 				clearTimeout(awaitingSyncTimeout)
 				awaitingSyncTimeout = undefined
 			}
-			
+
 			try {
-                if (placeholderResendCache && typeof placeholderResendCache.close === 'function') {
-                    placeholderResendCache.close();
-                } else if (placeholderResendCache && typeof placeholderResendCache.flushAll === 'function') {
-                    placeholderResendCache.flushAll();
-                }
+                placeholderResendCache.flushAll();
+                placeholderResendCache.close();
             } catch (err) {
                 logger.error({ err }, 'Failed to close placeholderResendCache');
             }
