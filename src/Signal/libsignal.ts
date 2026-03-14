@@ -372,6 +372,7 @@ export function makeLibSignalRepository(
 		 * Should be called when the socket is closed to prevent memory leaks.
 		 */
 		destroy() {
+            migratedSessionCache.destroy();
 			migratedSessionCache.clear()
 			lidMapping.destroy()
 		}

@@ -332,6 +332,7 @@ export class LIDMappingStore {
 	 * Should be called when the socket is closed to prevent memory leaks.
 	 */
 	destroy(): void {
+        this.mappingCache.destroy();
 		this.mappingCache.clear()
 		this.inflightLIDLookups.clear()
 		this.inflightPNLookups.clear()

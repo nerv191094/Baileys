@@ -107,13 +107,15 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 		new NodeCache<JidWithDevice[]>({
 			stdTTL: DEFAULT_CACHE_TTLS.USER_DEVICES, // 5 minutes
 			useClones: false,
-			maxKeys: 1000
+			maxKeys: 1000,
+			checkperiod: 300
 		})
 
 	const peerSessionsCache = new NodeCache<boolean>({
 		stdTTL: DEFAULT_CACHE_TTLS.USER_DEVICES,
 		useClones: false,
-		maxKeys: 1000
+		maxKeys: 1000,
+        checkperiod: 300
 	})
 
 	// Initialize message retry manager if enabled
@@ -1250,8 +1252,8 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 	ev.on('connection.update', ({ connection }) => {
 		if (connection === 'close') {
 			messageRetryManager?.destroy()
-			userDevicesCache.flushAll()
-			peerSessionsCache.flushAll()
+            userDevicesCache.close();
+            peerSessionsCache.close();
 		}
 	})
 

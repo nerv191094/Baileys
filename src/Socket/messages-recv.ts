@@ -119,14 +119,16 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		new NodeCache<number>({
 			stdTTL: DEFAULT_CACHE_TTLS.MSG_RETRY, // 1 hour
 			useClones: false,
-			maxKeys: 5000
+			maxKeys: 5000,
+			checkperiod: 3600
 		})
 	const callOfferCache =
 		config.callOfferCache ||
 		new NodeCache<WACallEvent>({
 			stdTTL: DEFAULT_CACHE_TTLS.CALL_OFFER, // 5 mins
 			useClones: false,
-			maxKeys: 1000
+			maxKeys: 1000,
+			checkperiod: 300
 		})
 
 	const placeholderResendCache =
@@ -134,11 +136,12 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		new NodeCache({
 			stdTTL: DEFAULT_CACHE_TTLS.MSG_RETRY, // 1 hour
 			useClones: false,
-			maxKeys: 5000
+			maxKeys: 5000,
+			checkperiod: 3600
 		})
 
 	// Debounce identity-change session refreshes per JID to avoid bursts
-	const identityAssertDebounce = new NodeCache<boolean>({ stdTTL: 5, useClones: false, maxKeys: 500 })
+	const identityAssertDebounce = new NodeCache<boolean>({ stdTTL: 5, useClones: false, maxKeys: 500, checkperiod: 300 })
 
 	let sendActiveReceipts = false
 

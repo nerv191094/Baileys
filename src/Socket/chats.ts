@@ -1468,7 +1468,7 @@ export const makeChatsSocket = (config: SocketConfig) => {
 				awaitingSyncTimeout = undefined
 			}
 
-			placeholderResendCache.flushAll()
+            placeholderResendCache.close();
 		}
 	})
 
