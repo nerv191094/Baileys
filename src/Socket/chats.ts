@@ -1467,8 +1467,16 @@ export const makeChatsSocket = (config: SocketConfig) => {
 				clearTimeout(awaitingSyncTimeout)
 				awaitingSyncTimeout = undefined
 			}
-
-            placeholderResendCache.close();
+			
+			try {
+                if (placeholderResendCache && typeof placeholderResendCache.close === 'function') {
+                    placeholderResendCache.close();
+                } else if (placeholderResendCache && typeof placeholderResendCache.flushAll === 'function') {
+                    placeholderResendCache.flushAll();
+                }
+            } catch (err) {
+                logger.error({ err }, 'Failed to close placeholderResendCache');
+            }
 		}
 	})
 
