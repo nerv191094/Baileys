@@ -1683,13 +1683,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 
 		// Clean up local caches when connection closes
 		if (connection === 'close') {
-            const safeClose = (cache, name) => {
+            const safeClose = (cache: NodeCache<any>, name: string) => {
                 try {
-                    if (cache && typeof cache.close === 'function') {
-                        cache.close();
-                    } else if (cache && typeof cache.flushAll === 'function') {
-                        cache.flushAll();
-                    }
+					cache.flushAll();
+					cache.close();
                 } catch (err) {
                     logger.error({ err, cacheName: name }, 'Failed to close cache');
                 }

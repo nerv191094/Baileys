@@ -1171,13 +1171,10 @@ export const makeMessagesSocket = (config: SocketConfig) => {
             }
             
             // ✅ 类型安全的清理：优先使用 close()，回退到 flushAll()
-            const safeClose = (cache, name) => {
+            const safeClose = (cache: NodeCache<any>, name: string) => {
                 try {
-                    if (cache && typeof cache.close === 'function') {
-                        cache.close();
-                    } else if (cache && typeof cache.flushAll === 'function') {
-                        cache.flushAll();
-                    }
+                    cache.flushAll();
+                    cache.close();
                 } catch (err) {
                     logger.error({ err, cacheName: name }, 'Failed to close cache');
                 }

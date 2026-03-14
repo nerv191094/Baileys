@@ -6,6 +6,7 @@ import type { AuthenticationState, LIDMapping, SignalAuthState, TransactionCapab
 import type { GroupMetadata } from './GroupMetadata'
 import { type MediaConnInfo, type WAMessageKey } from './Message'
 import type { SignalRepositoryWithLIDStore } from './Signal'
+import type NodeCache from '@cacheable/node-cache'
 
 export type WAVersion = [number, number, number]
 export type WABrowserDescription = [string, string, string]
@@ -81,13 +82,13 @@ export type SocketConfig = {
 	/**
 	 * map to store the retry counts for failed messages;
 	 * used to determine whether to retry a message or not */
-	msgRetryCounterCache?: CacheStore
+	msgRetryCounterCache?: NodeCache<any>
 	/** provide a cache to store a user's device list */
-	userDevicesCache?: PossiblyExtendedCacheStore
+	userDevicesCache?: NodeCache<any>
 	/** cache to store call offers */
-	callOfferCache?: CacheStore
+	callOfferCache?: NodeCache<any>
 	/** cache to track placeholder resends */
-	placeholderResendCache?: CacheStore
+	placeholderResendCache?: NodeCache<any>
 	/** width for link preview images */
 	linkPreviewImageThumbnailWidth: number
 	/** Should Baileys ask the phone for full history, will be received async */
