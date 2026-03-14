@@ -82,7 +82,7 @@ export type SocketConfig = {
 	/**
 	 * map to store the retry counts for failed messages;
 	 * used to determine whether to retry a message or not */
-	msgRetryCounterCache?: NodeCache<any>
+	msgRetryCounterCache?: NodeCache<number>
 	/** provide a cache to store a user's device list */
 	userDevicesCache?: NodeCache<any>
 	/** cache to store call offers */
