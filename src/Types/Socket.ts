@@ -7,6 +7,7 @@ import type { GroupMetadata } from './GroupMetadata'
 import { type MediaConnInfo, type WAMessageKey } from './Message'
 import type { SignalRepositoryWithLIDStore } from './Signal'
 import type NodeCache from '@cacheable/node-cache'
+import type { WACallEvent } from './Call'
 
 export type WAVersion = [number, number, number]
 export type WABrowserDescription = [string, string, string]
