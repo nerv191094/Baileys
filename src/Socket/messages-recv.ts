@@ -1527,7 +1527,7 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 				await callOfferCache.set(call.id, call)
 			}
 
-			const existingCall = await callOfferCache.get<WACallEvent>(call.id)
+			const existingCall = await callOfferCache.get(call.id)
 
 			// use existing call info to populate this event
 			if (existingCall) {
