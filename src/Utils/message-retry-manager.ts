@@ -3,7 +3,7 @@ import type { ILogger } from './logger'
 import { NativeLRUCache } from './lru-cache'
 
 /** Number of sent messages to cache in memory for handling retry receipts */
-const RECENT_MESSAGES_SIZE = 512
+const RECENT_MESSAGES_SIZE = 128
 
 const MESSAGE_KEY_SEPARATOR = '\u0000'
 

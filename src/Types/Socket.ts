@@ -86,7 +86,7 @@ export type SocketConfig = {
 	/** provide a cache to store a user's device list */
 	userDevicesCache?: NodeCache<any>
 	/** cache to store call offers */
-	callOfferCache?: NodeCache<any>
+	callOfferCache?: NodeCache<WACallEvent>
 	/** cache to track placeholder resends */
 	placeholderResendCache?: NodeCache<any>
 	/** width for link preview images */
