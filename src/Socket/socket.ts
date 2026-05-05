@@ -636,25 +636,17 @@ export const makeSocket = (config: SocketConfig) => {
 		closed = true
 		logger.info({ trace: error?.stack }, error ? 'connection errored' : 'connection closed')
 
-		clearTimeout(keepAliveReq)
+		clearInterval(keepAliveReq)
 		clearTimeout(qrTimer)
 
-		consecutivePingFailures = 0
-		ws.removeAllListeners()
-
-		if (ev.isBuffering()) {
-			ev.flush()
-		}
+		ws.removeAllListeners('close')
+		ws.removeAllListeners('open')
+		ws.removeAllListeners('message')
 
 		if (!ws.isClosed && !ws.isClosing) {
 			try {
-				await Promise.race([
-					ws.close(),
-					new Promise<void>(resolve => setTimeout(resolve, 5000))
-				])
-			} catch {
-				// Ignore close errors — we're tearing down anyway
-			}
+				await ws.close()
+			} catch {}
 		}
 
 		ev.emit('connection.update', {
@@ -667,7 +659,10 @@ export const makeSocket = (config: SocketConfig) => {
 
 		noise.destroy()
 		ev.removeAllListeners()
+
 		ev.release()
+
+		// Release signal repository caches (LID mapping, migrated sessions)
 		signalRepository.destroy()
 	}
 
@@ -695,88 +690,37 @@ export const makeSocket = (config: SocketConfig) => {
 		})
 	}
 
-	/**
-	 * CONNECTION STABILITY: Keepalive uses recursive setTimeout instead of
-	 * setInterval to prevent overlapping pings. Tracks consecutive failures
-	 * and terminates the connection after MAX_PING_FAILURES consecutive
-	 * failed pings, which detects dead connections even when the OS-level
-	 * TCP socket hasn't timed out yet.
-	 */
-	const startKeepAliveRequest = () => {
-		const scheduleNextPing = () => {
-			keepAliveReq = setTimeout(async () => {
-				if (closed) {
-					return
-				}
+	const startKeepAliveRequest = () =>
+		(keepAliveReq = setInterval(() => {
+			if (!lastDateRecv) {
+				lastDateRecv = new Date()
+			}
 
-				if (!lastDateRecv) {
-					lastDateRecv = new Date()
-				}
-
-				const diff = Date.now() - lastDateRecv.getTime()
-
-				/*
-				 * If the time since last received message exceeds twice the
-				 * keepalive interval, the connection is almost certainly dead.
-				 * This is a hard timeout that catches cases where pings never
-				 * even get sent (e.g. event loop blocked).
-				 */
-				if (diff > keepAliveIntervalMs * 2 + 5000) {
-					logger.warn({ diff, keepAliveIntervalMs }, 'connection silent for too long')
-					void end(new Boom('Connection was lost', { statusCode: DisconnectReason.connectionLost }))
-					return
-				}
-
-				if (ws.isOpen) {
-					try {
-						await query({
-							tag: 'iq',
-							attrs: {
-								id: generateMessageTag(),
-								to: S_WHATSAPP_NET,
-								type: 'get',
-								xmlns: 'w:p'
-							},
-							content: [{ tag: 'ping', attrs: {} }]
-						})
-						// Ping succeeded — reset failure counter
-						consecutivePingFailures = 0
-					} catch (err) {
-						consecutivePingFailures++
-						logger.error(
-							{err, trace: (err as Error).stack, consecutivePingFailures, maxFailures: MAX_PING_FAILURES },
-							'error in sending keep alive'
-						)
-
-						/*
-						 * CONNECTION STABILITY: After MAX_PING_FAILURES consecutive
-						 * failures, the server is not responding. Terminate the
-						 * connection so the caller can reconnect cleanly rather
-						 * than sitting on a zombie socket.
-						 */
-						if (consecutivePingFailures >= MAX_PING_FAILURES) {
-							logger.warn('max ping failures reached, terminating connection')
-							void end(
-								new Boom('Connection was lost (ping failures)', {
-									statusCode: DisconnectReason.connectionLost
-								})
-							)
-							return
-						}
-					}
-				} else {
-					logger.warn('keep alive called when WS not open')
-				}
-
-				// Schedule next ping only if connection is still alive
-				if (!closed) {
-					scheduleNextPing()
-				}
-			}, keepAliveIntervalMs)
-		}
-
-		scheduleNextPing()
-	}
+			const diff = Date.now() - lastDateRecv.getTime()
+			/*
+				check if it's been a suspicious amount of time since the server responded with our last seen
+				it could be that the network is down
+			*/
+			if (diff > keepAliveIntervalMs + 5000) {
+				void end(new Boom('Connection was lost', { statusCode: DisconnectReason.connectionLost }))
+			} else if (ws.isOpen) {
+				// if its all good, send a keep alive request
+				query({
+					tag: 'iq',
+					attrs: {
+						id: generateMessageTag(),
+						to: S_WHATSAPP_NET,
+						type: 'get',
+						xmlns: 'w:p'
+					},
+					content: [{ tag: 'ping', attrs: {} }]
+				}).catch(err => {
+					logger.error({ trace: err.stack }, 'error in sending keep alive')
+				})
+			} else {
+				logger.warn('keep alive called when WS not open')
+			}
+		}, keepAliveIntervalMs))
 	/** i have no idea why this exists. pls enlighten me */
 	const sendPassiveIq = (tag: 'passive' | 'active') =>
 		query({
@@ -1175,18 +1119,6 @@ export const makeSocket = (config: SocketConfig) => {
 		signalRepository,
 		get user() {
 			return authState.creds.me
-		},
-		/**
-		 * CONNECTION STABILITY: Expose connection health metrics so
-		 * consumers can implement their own health checks or monitoring.
-		 * - lastMessageReceived: timestamp of last data from server
-		 * - consecutivePingFailures: how many pings have failed in a row
-		 */
-		get connectionHealth() {
-			return {
-				lastMessageReceived: lastDateRecv,
-				consecutivePingFailures
-			}
 		},
 		generateMessageTag,
 		query,

@@ -222,7 +222,7 @@ export const makeEventBuffer = (logger: ILogger): BaileysBufferableEventEmitter 
 							if (isBuffering && bufferCount <= 1) {
 								flush()
 							}
-						}, 100) // Small delay to allow nested buffers
+						}, 100)
 					}
 
 					return result
