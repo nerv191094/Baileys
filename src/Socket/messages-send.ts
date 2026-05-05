@@ -1251,24 +1251,15 @@ export const makeMessagesSocket = (config: SocketConfig) => {
 	// Clean up local resources when connection closes
 	ev.on('connection.update', ({ connection }) => {
 		if (connection === 'close') {
-			try {
-                messageRetryManager?.destroy();
-            } catch (err) {
-                logger.error({ err }, 'Failed to destroy messageRetryManager');
-            }
+				messageRetryManager?.destroy();
+
+				const safeClose = (cache: NodeCache<any>) => {
+					cache.flushAll();
+					cache.close();
+				};
             
-            // ✅ 类型安全的清理：优先使用 close()，回退到 flushAll()
-            const safeClose = (cache: NodeCache<any>, name: string) => {
-                try {
-                    cache.flushAll();
-                    cache.close();
-                } catch (err) {
-                    logger.error({ err, cacheName: name }, 'Failed to close cache');
-                }
-            };
-            
-            safeClose(userDevicesCache, 'userDevicesCache');
-            safeClose(peerSessionsCache, 'peerSessionsCache');
+				safeClose(userDevicesCache);
+				safeClose(peerSessionsCache);
 		}
 	});
 

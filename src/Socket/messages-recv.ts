@@ -119,15 +119,15 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		new NodeCache<number>({
 			stdTTL: DEFAULT_CACHE_TTLS.MSG_RETRY, // 1 hour
 			useClones: false,
-			maxKeys: 5000,
-			checkperiod: 3600
+			maxKeys: 20,
+			checkperiod: 300
 		})
 	const callOfferCache =
 		config.callOfferCache ||
 		new NodeCache<WACallEvent>({
 			stdTTL: DEFAULT_CACHE_TTLS.CALL_OFFER, // 5 mins
 			useClones: false,
-			maxKeys: 1000,
+			maxKeys: 5,
 			checkperiod: 300
 		})
 
@@ -136,8 +136,8 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 		new NodeCache({
 			stdTTL: DEFAULT_CACHE_TTLS.MSG_RETRY, // 1 hour
 			useClones: false,
-			maxKeys: 5000,
-			checkperiod: 3600
+			maxKeys: 20,
+			checkperiod: 300
 		})
 
 	// Debounce identity-change session refreshes per JID to avoid bursts
@@ -1732,6 +1732,10 @@ export const makeMessagesRecvSocket = (config: SocketConfig) => {
 			} catch {
 				/* ignore sync errors */
 			}
+			placeholderResendCache.flushAll();
+			callOfferCache.flushAll();
+			msgRetryCache.flushAll();
+			identityAssertDebounce.flushAll();
 		}
 
 		// Prune expired tctokens when coming online, at most once per 24 hours
