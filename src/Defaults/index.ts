@@ -139,7 +139,7 @@ export const HISTORY_SYNC_PAUSED_TIMEOUT_MS = 120_000
 
 export const MIN_PREKEY_COUNT = 5
 
-export const INITIAL_PREKEY_COUNT = 812
+export const INITIAL_PREKEY_COUNT = 30
 
 export const UPLOAD_TIMEOUT = 30000 // 30 seconds
 
