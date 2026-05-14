@@ -15,6 +15,7 @@ import type { Label } from './Label'
 import type { LabelAssociation } from './LabelAssociation'
 import type { MessageUpsertType, MessageUserReceiptUpdate, WAMessage, WAMessageKey, WAMessageUpdate } from './Message'
 import type { ConnectionState, NewChatMessageCapInfo } from './State'
+import type { BinaryNode } from '../WABinary'
 
 // TODO: refactor this mess
 export type BaileysEventMap = {
@@ -141,6 +142,8 @@ export type BaileysEventMap = {
 				setting: 'channelsPersonalisedRecommendation'
 				value: proto.SyncActionValue.IPrivacySettingChannelsPersonalisedRecommendationAction
 		  }
+
+	'error.unhandled': Uint8Array | BinaryNode
 }
 
 export type BufferedEventData = {

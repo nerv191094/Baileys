@@ -613,6 +613,7 @@ export const makeSocket = (config: SocketConfig) => {
 
 				if (!anyTriggered && logger.level === 'debug') {
 					logger.debug({ unhandled: true, msgId, fromMe: false, frame }, 'communication recv')
+					ev.emit("error.unhandled", frame)
 				}
 			}
 		})
