@@ -611,8 +611,10 @@ export const makeSocket = (config: SocketConfig) => {
 				anyTriggered = ws.emit(`${DEF_CALLBACK_PREFIX}${l0},,${l2}`, frame) || anyTriggered
 				anyTriggered = ws.emit(`${DEF_CALLBACK_PREFIX}${l0}`, frame) || anyTriggered
 
-				if (!anyTriggered && logger.level === 'debug') {
-					logger.debug({ unhandled: true, msgId, fromMe: false, frame }, 'communication recv')
+				if (!anyTriggered) {
+					if (logger.level === 'debug') {
+						logger.debug({ unhandled: true, msgId, fromMe: false, frame }, 'communication recv')
+					}
 					ev.emit("error.unhandled", frame)
 				}
 			}
